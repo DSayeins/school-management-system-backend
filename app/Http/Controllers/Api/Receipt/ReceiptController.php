@@ -57,8 +57,10 @@
 
             if ($data['number'] == 0) {
                 /** @var Receipt $last */
-                $last = Receipt::orderBy('id')->get()->last();
-                $data['auto_number'] = $this->setAutoNumber($last);
+                $last = Receipt::where('auto_number', '!=', '')
+                    ->orderBy('id', 'desc')
+                    ->first();
+                $data['auto_number'] = $this->setAutoNumber($last->auto_number);
             }
 
             $data['amount'] = Convert::intToCurrency($data['amount']);
@@ -130,14 +132,16 @@
                 $toPaid = $slice - $oldPaid;
 
                 $detailRemain = $firstPart - $newPaid;
-            } else if ($newPaid <= ($firstPart + $part)) {
+            }
+            else if ($newPaid <= ($firstPart + $part)) {
                 $title = '2eme tranche';
                 $slice = $part;
                 $toPaid = ($firstPart + $part) - $oldPaid;
 
 
                 $detailRemain = ($firstPart + $part) - $newPaid;
-            } else {
+            }
+            else {
                 $title = '3eme tranche';
                 $slice = $part;
                 $toPaid = $scholarship - $oldPaid;
@@ -177,16 +181,44 @@
             return response()->json($response);
         }
 
-        private function setAutoNumber(?Receipt $receipt): string
+        public function delete(int $id)
         {
-            $autoNumber = '';
+            $receipt = Receipt::findOrFail($id);
 
+            $payment = Payment::findOrFail($receipt->payment_id);
+
+            $registration = Registration::findOrFail($payment->registration_id);
+
+            DB::transaction(function () use ($receipt, $payment, $registration) {
+                if ($registration->soldOut == 1) {
+                    $registration->soldOut = 0;
+                    $registration->save();
+                }
+
+                $paid = Convert::currencyToInt($payment->paid);
+                $remain = Convert::currencyToInt($payment->remain);
+                $amount = Convert::currencyToInt($receipt->amount);
+
+                $paid -= $amount;
+                $remain += $amount;
+
+                $payment->paid = Convert::intToCurrency($paid);
+                $payment->remain = Convert::intToCurrency($remain);
+                $payment->save();
+
+                $receipt->delete();
+            });
+
+            return response()->json(['message' => AppText::successfullyDelete()]);
+        }
+
+        private function setAutoNumber(string $autoNumber): string
+        {
             $currentYear = Carbon::now()->year;
             $currentMonth = Carbon::now()->month;
 
-            if ($receipt) {
-                $_autoNumber = $receipt->auto_number;
-                $tab = explode('/', $_autoNumber);
+            if ($autoNumber !== '') {
+                $tab = explode('/', $autoNumber);
                 $subTab = explode('-', $tab[1]);
 
                 if (count($subTab) == 3) {
@@ -199,7 +231,8 @@
                     $autoNumber = "REF/$currentYear-$currentMonth-$value";
                 }
 
-            } else {
+            }
+            else {
                 $autoNumber = "REF/$currentYear-$currentMonth-1";
             }
 

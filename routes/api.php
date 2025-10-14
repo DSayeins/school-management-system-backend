@@ -146,6 +146,7 @@
         Route::prefix('receipt')->controller(ReceiptController::class)->group(function () {
             Route::post('store', 'store');
             Route::get('all', 'all');
+            Route::delete('{id}/delete', 'delete');
         });
 
         Route::prefix('reminder')->controller(ReminderController::class)->group(function () {
