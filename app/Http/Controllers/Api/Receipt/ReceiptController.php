@@ -109,16 +109,17 @@
 
             $feed = Convert::currencyToInt($configuration->registration_fees);
             $scholarship = Convert::currencyToInt($registration->scholarship);
+            $includeFeed = ($registration->bourse == 0 && $registration->discount == 0) &&
+                $configuration->includeRegistrationFeed == 1;
 
-            if (($registration->bourse == 0 && $registration->discount == 0) && $configuration->includeRegistrationFeed) {
+            if ($includeFeed) {
                 $scholarship -= $feed;
             }
 
             $period = $registration->periods;
             $part = intval($scholarship / $period);
 
-            $firstPart = ($registration->bourse == 0 && $registration->discount == 0
-                && $configuration->includeRegistrationFeed) ? $part + $feed : $part;
+            $firstPart = $includeFeed ? $part + $feed : $part;
 
             $title = '';
             $slice = 0;
