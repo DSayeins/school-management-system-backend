@@ -71,9 +71,6 @@
 
             $data = $request->validated();
 
-            $data['normal'] = Convert::intToCurrency($data['normal']);
-            $data['subvention'] = Convert::intToCurrency($data['subvention']);
-
             $feed->update($data);
 
             $registrations = Registration::join('classrooms', 'registrations.classroom_id', '=', 'classrooms.id')
@@ -100,13 +97,13 @@
                     'includeRegistrationFees' => $configuration->includeRegistrationFeed,
                 ]);
 
-                $registration->scholarship = Convert::intToCurrency($scholarship);
+                $registration->scholarship = $scholarship;
                 $registration->save();
 
                 $payment = Payment::whereRegistrationId($registration->id)->first();
 
-                $remain = $scholarship - Convert::currencyToInt($payment->paid);
-                $payment->remain = Convert::intToCurrency($remain);
+                $remain = $scholarship - $payment->paid;
+                $payment->remain = $remain;
                 $payment->save();
             }
 
