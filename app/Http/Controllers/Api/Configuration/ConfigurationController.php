@@ -30,8 +30,6 @@
 
             $data = $request->validated();
 
-            $data['registration_fees'] = Convert::intToCurrency($data['registration_fees']);
-
             $config->update($data);
 
             return response()->json(['message' => AppText::successfullyUpdate()]);
@@ -51,7 +49,6 @@
         public function store(ConfigurationRequest $request): JsonResponse
         {
             $data = $request->validated();
-            $data['registration_fees'] = Convert::intToCurrency($data['registration_fees']);
             Configuration::create($data);
 
             return response()->json(['message' => AppText::successfullyCreate()]);
