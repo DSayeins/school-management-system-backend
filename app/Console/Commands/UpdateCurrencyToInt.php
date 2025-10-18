@@ -43,12 +43,14 @@
 
             try {
                 DB::transaction(function () use ($registrations, $payments, $receipts, $scholarships, $configs) {
+                    $this->info('--- Mises a jour des inscriptions ---');
                     foreach ($registrations as $registration) {
                         $registration->update([
                             'scholarship' => Convert::currencyToInt($registration->scholarship),
                         ]);
                     }
 
+                    $this->info('--- Mises a jour des paiements ---');
                     foreach ($payments as $payment) {
                         $payment->update([
                             'paid' => Convert::currencyToInt($payment->paid),
@@ -56,12 +58,14 @@
                         ]);
                     }
 
+                    $this->info('--- Mises a jour des recus ---');
                     foreach ($receipts as $receipt) {
                         $receipt->update([
                             'amount' => Convert::currencyToInt($receipt->amount)
                         ]);
                     }
 
+                    $this->info('--- Mises a jour des scolarites ---');
                     foreach ($scholarships as $scholarship) {
                         $scholarship->update([
                             'normal' => Convert::currencyToInt($scholarship->normal),
@@ -69,6 +73,7 @@
                         ]);
                     }
 
+                    $this->info('--- Mises a jour des configurations ---');
                     foreach ($configs as $config) {
                         $config->update([
                             'registration_fees' => Convert::currencyToInt($config->registration_fees)
