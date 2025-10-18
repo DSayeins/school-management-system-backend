@@ -44,15 +44,13 @@
             $data = $request->validated();
 
             $ids = $data['classrooms_id'];
-            $normal = Convert::intToCurrency($data['normal']);
-            $subvention = Convert::intToCurrency($data['subvention']);
 
             foreach ($ids as $id) {
                 ScholarshipFeed::create([
                     'classroom_id' => $id,
                     'year_id' => $data['year_id'],
-                    'normal' => $normal,
-                    'subvention' => $subvention,
+                    'normal' => $data['normal'],
+                    'subvention' => $data['subvention'],
                 ]);
             }
 
