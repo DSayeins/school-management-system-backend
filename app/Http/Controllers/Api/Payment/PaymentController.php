@@ -61,7 +61,7 @@
             $fullname = $registration->student->fullname();
 
             $payment->remain = $registration->scholarship;
-            $payment->paid = Convert::intToCurrency(0);
+            $payment->paid = 0;
             $payment->save();
 
             $payment->receipts()->delete();
