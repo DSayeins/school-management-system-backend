@@ -2,11 +2,15 @@
 
     namespace App\Http\Controllers\Api\Registration;
 
+    use App\Events\Registration\RegistrationDeleted;
+    use App\Events\Registration\RegistrationStored;
+    use App\Events\Registration\RegistrationUpdated;
     use App\Helpers\Constants\AppText;
     use App\Helpers\utitlities\Calculate;
     use App\Helpers\utitlities\Convert;
     use App\Http\Controllers\Controller;
     use App\Http\Requests\Api\Registration\RegistrationRequest;
+    use App\Listeners\Registration\OnRegistrationDeleted;
     use App\Models\Classroom;
     use App\Models\Configuration;
     use App\Models\Level;
@@ -167,7 +171,7 @@
                 'includeRegistrationFees' => $configuration->includeRegistrationFeed,
             ]);
 
-            $data['scholarship'] = Convert::intToCurrency($scholarship);
+            $data['scholarship'] = $scholarship;
 
             /** @var Registration $isset */
             $isset = Registration::where('year_id', $data['year_id'])
@@ -183,15 +187,9 @@
                 ], 422);
             }
 
-            DB::transaction(function () use ($data) {
-                $registration = Registration::create($data);
+            $registration = Registration::create($data);
 
-                Payment::create([
-                    'registration_id' => $registration->id,
-                    'paid' => '0 CFA',
-                    'remain' => $registration->scholarship,
-                ]);
-            });
+            event(new RegistrationStored($registration));
 
             return response()->json(['message' => AppText::successfullyCreate()]);
         }
@@ -226,32 +224,10 @@
                 'includeRegistrationFees' => $configuration->includeRegistrationFeed,
             ]);
 
-            $data['scholarship'] = Convert::intToCurrency($scholarship);
+            $data['scholarship'] = $scholarship;
 
-            DB::transaction(function () use ($registration, $data, $scholarship) {
-                $registration->update($data);
-
-                $payment = Payment::where('registration_id', $registration->id)->first();
-
-                if (!$payment) {
-                    $payment = payment::create([
-                        'registration_id' => $registration->id,
-                        'paid' => '0 CFA',
-                        'remain' => $registration->scholarship,
-                    ]);
-                }
-
-                $remain = Convert::currencyToInt($payment->remain);
-                $paid = Convert::currencyToInt($payment->paid);
-
-                $remain = $scholarship - $paid;
-                $paid = $scholarship - $remain;
-
-                $payment->remain = Convert::intToCurrency($remain);
-                $payment->paid = Convert::intToCurrency($paid);
-
-                $payment->save();
-            });
+            $registration->update($data);
+            event(new RegistrationUpdated($registration));
 
             return response()->json(['message' => AppText::successfullyCreate()]);
         }
@@ -268,6 +244,14 @@
                 ->first();
 
             return response()->json($registration);
+        }
+
+        public function delete(int $id)
+        {
+            $registration = Registration::findOrFail($id);
+            event(new RegistrationDeleted($registration));
+
+            return response()->json(['message' => AppText::successfullyDelete()]);
         }
 
         public function getInformation(int $id): JsonResponse

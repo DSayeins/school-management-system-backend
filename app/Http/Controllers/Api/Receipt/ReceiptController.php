@@ -63,12 +63,11 @@
                 $data['auto_number'] = $this->setAutoNumber($last->auto_number);
             }
 
-            $data['amount'] = Convert::intToCurrency($data['amount']);
             $amount = Convert::currencyToInt($data['amount']);
 
             $newPaid = 0;
-            $oldPaid = Convert::currencyToInt($payment->paid);
-            $oldRemain = Convert::currencyToInt($payment->remain);
+            $oldPaid = $payment->paid;
+            $oldRemain = $payment->remain;
             $newRemain = 0;
 
             $receipt = null;
@@ -85,16 +84,12 @@
                 /** @var Receipt $last */
                 $receipt = Receipt::create($data);
 
-                $amount = Convert::currencyToInt($data['amount']);
-                $paid = Convert::currencyToInt($payment->paid);
-                $remain = Convert::currencyToInt($payment->remain);
-
-                $newPaid = $amount + $paid;
-                $newRemain = $remain - $amount;
+                $newPaid = $data['amount'] + $payment->paid;
+                $newRemain = $payment->remain - $data['amount'];
 
                 // on met a jour le paiement
-                $payment->paid = Convert::intToCurrency($newPaid);
-                $payment->remain = Convert::intToCurrency($newRemain);
+                $payment->paid = $newPaid;
+                $payment->remain = $newRemain;
                 $payment->save();
             });
 
